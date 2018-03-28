@@ -99,7 +99,7 @@ FOUNDATION_STATIC_INLINE NSUInteger SDCacheCostForImage(UIImage *image) {
         // Init the memory cache
         _memCache = [[AutoPurgeCache alloc] init];
         _memCache.name = fullNamespace;
-        self.maxMemoryCountLimit = 200;
+        self.maxMemoryCountLimit = 100;
 #if SD_UIKIT
         // Subscribe to app events
         [[NSNotificationCenter defaultCenter] addObserver:self
@@ -150,14 +150,18 @@ FOUNDATION_STATIC_INLINE NSUInteger SDCacheCostForImage(UIImage *image) {
     }
     // if memory cache is enabled
     if (self.config.shouldCacheImagesInMemory) {
-        NSUInteger cost = SDCacheCostForImage(image);
-        [self.memCache setObject:image forKey:key cost:cost];
+        dispatch_async(_ioQueue, ^{
+            NSUInteger cost = SDCacheCostForImage(image);
+            [self.memCache setObject:image forKey:key cost:cost];
+            if (completionBlock) {
+                completionBlock();
+            }
+        });
+        
     }
     
     
-    if (completionBlock) {
-        completionBlock();
-    }
+    
     
 }
 
